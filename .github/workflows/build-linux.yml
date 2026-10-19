@@ -33,27 +33,52 @@ jobs:
             unzip \
             curl
 
+      - name: Setup Swap Space
+        run: |
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+
       - name: Build
         id: build
         shell: bash
         run: |
-          # Si se especifica una versión, cambiar a esa etiqueta (tag)
+          # 1. Cambiar a versión específica si se solicitó
           if [ -n "${{ github.event.inputs.version }}" ]; then
             git fetch --tags
             git checkout "${{ github.event.inputs.version }}"
             git submodule update --init --recursive
           fi
 
-          # Ejecutar build.sh de forma no interactiva seleccionando 'U' (User)
-          echo "U" | ./build.sh
+          # 2. Descargar Skia precompilado para Linux (Obligatorio para Aseprite)
+          mkdir -p skia
+          cd skia
+          curl -L -o skia.zip https://github.com/aseprite/skia/releases/download/m119-0a2154c5e3/Skia-Linux-Release-x64-libstdc++.zip
+          unzip skia.zip
+          cd ..
 
-          # Crear la carpeta de salida y empaquetar el binario compilado
+          # 3. Configurar CMake
+          mkdir build
+          cd build
+          cmake \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DLAF_BACKEND=skia \
+            -DSKIA_DIR=../skia \
+            -DSKIA_LIBRARY_DIR=../skia/out/Release-x64 \
+            -DSKIA_LIBRARY=../skia/out/Release-x64/libskia.a \
+            -G Ninja \
+            ..
+
+          # 4. Compilar Aseprite
+          ninja aseprite
+          cd ..
+
+          # 5. Crear la carpeta de salida y empaquetar
           mkdir -p github
-          
-          # Aseprite compila por defecto dentro de build/bin
           tar -czf github/aseprite-linux.tar.gz -C build/bin .
 
-          # Obtener la versión para el nombre del artefacto
+          # Obtener la versión para el artefacto
           VERSION=$(git describe --tags --always)
           echo "ASEPRITE_VERSION=$VERSION" >> $GITHUB_OUTPUT
 
