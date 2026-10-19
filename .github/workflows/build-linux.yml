@@ -46,11 +46,11 @@ jobs:
             git submodule update --init --recursive
           fi
 
-          # 2. Descargar Skia precompilado oficial (Versión m124)
+          # 2. Descargar Skia precompilado oficial (Versión m124) con el nombre exacto
           mkdir -p skia
           cd skia
-          curl -L -o skia.zip https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Linux-Release-x64-libc++.zip
-          unzip skia.zip
+          curl -LO https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Linux-Release-x64.zip
+          unzip Skia-Linux-Release-x64.zip
           cd ..
 
           # 3. Configurar CMake usando Clang y libc++
