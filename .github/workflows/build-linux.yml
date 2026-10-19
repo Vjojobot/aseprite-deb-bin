@@ -1,0 +1,65 @@
+name: aseprite
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build, leave empty for latest"
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            g++ \
+            clang \
+            cmake \
+            ninja-build \
+            libx11-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libfontconfig1-dev \
+            unzip \
+            curl
+
+      - name: Build
+        id: build
+        shell: bash
+        run: |
+          # Si se especifica una versión, cambiar a esa etiqueta (tag)
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            git fetch --tags
+            git checkout "${{ github.event.inputs.version }}"
+            git submodule update --init --recursive
+          fi
+
+          # Ejecutar build.sh de forma no interactiva seleccionando 'U' (User)
+          echo "U" | ./build.sh
+
+          # Crear la carpeta de salida y empaquetar el binario compilado
+          mkdir -p github
+          
+          # Aseprite compila por defecto dentro de build/bin
+          tar -czf github/aseprite-linux.tar.gz -C build/bin .
+
+          # Obtener la versión para el nombre del artefacto
+          VERSION=$(git describe --tags --always)
+          echo "ASEPRITE_VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: aseprite-linux-${{ steps.build.outputs.ASEPRITE_VERSION }}
+          path: github/
+          if-no-files-found: error
