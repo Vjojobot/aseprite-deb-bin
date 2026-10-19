@@ -11,36 +11,35 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout Your Wrapper Repo
         uses: actions/checkout@v4
 
       - name: Install Dependencies
-              run:|
-                sudo apt-get update
-                sudo apt-get install -y \
-                  g++ \
-                  clang \
-                  libc++-dev \
-                  libc++abi-dev \
-                  cmake \
-                  ninja-build \
-                  libx11-dev \
-                  libxcursor-dev \
-                  libxi-dev \
-                  libxrandr-dev \
-                  libgl1-mesa-dev \
-                  libfontconfig1-dev \
-                  unzip \
-                  curl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            g++ \
+            clang \
+            libc++-dev \
+            libc++abi-dev \
+            cmake \
+            ninja-build \
+            libx11-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxrandr-dev \
+            libgl1-mesa-dev \
+            libfontconfig1-dev \
+            unzip \
+            curl
 
       - name: Get Aseprite Source Code
         run: |
-          # Clonar el código fuente real de Aseprite en la carpeta 'aseprite'
+          # Clonar el código fuente real de Aseprite
           git clone --recursive https://github.com/aseprite/aseprite.git
           cd aseprite
 
-          # 1. Cambiar a versión específica si se solicitó
+          # Cambiar a versión específica si se solicitó
           if [ -n "${{ github.event.inputs.version }}" ]; then
             git fetch --tags
             git checkout "${{ github.event.inputs.version }}"
@@ -54,14 +53,14 @@ jobs:
           # Trabajar dentro de la carpeta del código fuente
           cd aseprite
 
-          # 2. Descargar Skia precompilado oficial (Versión m124)
+          # Descargar Skia precompilado oficial (Versión m124)
           mkdir -p skia
           cd skia
           curl -LO https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Linux-Release-x64.zip
           unzip Skia-Linux-Release-x64.zip
           cd ..
 
-          # 3. Configurar CMake usando Clang y libc++
+          # Configurar CMake usando Clang y libc++
           export CC=clang
           export CXX=clang++
           mkdir build
@@ -77,11 +76,11 @@ jobs:
             -G Ninja \
             ..
 
-          # 4. Compilar Aseprite
+          # Compilar Aseprite
           ninja aseprite
           cd ..
 
-          # 5. Crear la carpeta de salida y empaquetar
+          # Crear la carpeta de salida y empaquetar
           mkdir -p ../github
           tar -czf ../github/aseprite-linux.tar.gz -C build/bin .
 
