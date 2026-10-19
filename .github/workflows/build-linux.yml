@@ -12,10 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Checkout
+      - name: Checkout Your Wrapper Repo
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Install Dependencies
         run: |
@@ -35,10 +33,12 @@ jobs:
             unzip \
             curl
 
-      - name: Build
-        id: build
-        shell: bash
+      - name: Get Aseprite Source Code
         run: |
+          # Clonar el código fuente real de Aseprite en la carpeta 'aseprite'
+          git clone --recursive https://github.com/aseprite/aseprite.git
+          cd aseprite
+
           # 1. Cambiar a versión específica si se solicitó
           if [ -n "${{ github.event.inputs.version }}" ]; then
             git fetch --tags
@@ -46,7 +46,14 @@ jobs:
             git submodule update --init --recursive
           fi
 
-          # 2. Descargar Skia precompilado oficial (Versión m124) con el nombre exacto
+      - name: Build
+        id: build
+        shell: bash
+        run: |
+          # Trabajar dentro de la carpeta del código fuente
+          cd aseprite
+
+          # 2. Descargar Skia precompilado oficial (Versión m124)
           mkdir -p skia
           cd skia
           curl -LO https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Linux-Release-x64.zip
@@ -74,8 +81,8 @@ jobs:
           cd ..
 
           # 5. Crear la carpeta de salida y empaquetar
-          mkdir -p github
-          tar -czf github/aseprite-linux.tar.gz -C build/bin .
+          mkdir -p ../github
+          tar -czf ../github/aseprite-linux.tar.gz -C build/bin .
 
           # Obtener la versión para el artefacto
           VERSION=$(git describe --tags --always)
