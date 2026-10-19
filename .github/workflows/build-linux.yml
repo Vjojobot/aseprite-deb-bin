@@ -33,13 +33,6 @@ jobs:
             unzip \
             curl
 
-      - name: Setup Swap Space
-        run: |
-          sudo fallocate -l 4G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-
       - name: Build
         id: build
         shell: bash
